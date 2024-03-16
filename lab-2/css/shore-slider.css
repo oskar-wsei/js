@@ -1,0 +1,36 @@
+.shore-slider {
+  position: relative;
+  overflow: hidden;
+}
+
+.shore-wrapper {
+  display: flex;
+  width: fit-content;
+  height: 100%;
+}
+
+.shore-nav {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.shore-arrows {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.shore-arrow {
+  pointer-events: initial;
+}
+
+.shore-tabs {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.shore-tab {
+  pointer-events: initial;
+}

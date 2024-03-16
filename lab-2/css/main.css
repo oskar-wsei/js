@@ -1,0 +1,28 @@
+@import url('./shore-slider.css');
+
+:root {
+  font-family: sans-serif;
+}
+
+#slider {
+  width: 640px;
+  height: 360px;
+  border: 1px solid black;
+}
+
+.slide {
+  --bg-color: #aaa;
+  --fg-color: #444;
+  display: grid;
+  place-content: center;
+  height: 100%;
+  font-size: 4rem;
+  font-weight: bold;
+  background-color: var(--bg-color);
+  color: var(--fg-color);
+}
+
+.slide-dark {
+  --bg-color: #444;
+  --fg-color: #aaa;
+}
