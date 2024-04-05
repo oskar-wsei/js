@@ -1,3 +1,4 @@
+@import url('./shore-lightbox.css');
 @import url('./shore-slider.css');
 
 :root {
@@ -25,4 +26,8 @@
 .slide-dark {
   --bg-color: #444;
   --fg-color: #aaa;
+}
+
+[data-lightbox] {
+  cursor: pointer;
 }

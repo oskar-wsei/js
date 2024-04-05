@@ -7,12 +7,20 @@
   display: flex;
   width: fit-content;
   height: 100%;
+  position: relative;
+}
+
+.shore-animation-fade .shore-slide {
+  position: absolute;
+  opacity: 0;
+  z-index: 0;
 }
 
 .shore-nav {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  z-index: 10;
 }
 
 .shore-arrows {

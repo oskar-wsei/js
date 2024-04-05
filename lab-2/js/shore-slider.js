@@ -3,14 +3,17 @@ export class ShoreSlider {
   /** @type {HTMLElement} */ wrapper;
   /** @type {HTMLElement[]} */ slides;
 
-  #currentSlide = 0;
+  #currentSlide = undefined;
 
-  constructor(options) {
+  constructor(element, options) {
     this.options = options;
-    this.element = document.querySelector(options.element);
+    this.element = element instanceof HTMLElement ? element : document.querySelector(element);
     this.slides = [...this.element.children];
+    this.isPlaying = false;
+    this.playingInterval = 0;
     this.#initializeElements();
     this.update();
+    this.navigate(0);
   }
 
   update() {
@@ -31,30 +34,33 @@ export class ShoreSlider {
   }
 
   navigate(index) {
-    const slideIndex = index % this.slides.length;
-    this.#currentSlide = slideIndex;
+    const previousSlideIndex = this.#currentSlide;
+    const curretSlideIndex = (index > 0 ? index : this.slides.length + index) % this.slides.length;
+    this.#currentSlide = curretSlideIndex;
 
-    let translateX = 0;
+    const animations = {
+      slide: AnimationTypeSlide,
+      fade: AnimationTypeFade,
+    };
 
-    for (let i = 0; i < slideIndex; i++) {
-      translateX -= this.slides[i].getBoundingClientRect().width;
-    }
+    const animation = new animations[this.options.type](this);
+    animation.run(curretSlideIndex, previousSlideIndex);
+  }
 
-    const style = window.getComputedStyle(this.wrapper);
-    const matrix = new DOMMatrix(style.transform);
+  toggle() {
+    this.isPlaying ? this.stop() : this.start();
+  }
 
-    const animation = new ShoreAnimation({
-      duration: this.options.duration,
-      from: matrix.m41,
-      to: translateX,
-      timingFunction: time => time,
-    });
+  start() {
+    if (this.isPlaying) this.stop();
+    this.isPlaying = true;
+    this.playingInterval = setInterval(() => this.next(), this.options.delay);
+  }
 
-    animation.subscribe(current => {
-      this.wrapper.style.transform = `translateX(${current}px)`;
-    });
-
-    animation.start();
+  stop() {
+    if (!this.isPlaying) return;
+    this.isPlaying = false;
+    clearInterval(this.playingInterval);
   }
 
   #initializeElements() {
@@ -66,6 +72,7 @@ export class ShoreSlider {
 
     this.wrapper = document.createElement('div');
     this.wrapper.classList.add('shore-wrapper');
+    this.wrapper.classList.add(`shore-animation-${this.options.type}`);
 
     while (this.element.hasChildNodes()) {
       this.wrapper.appendChild(this.element.firstChild);
@@ -148,4 +155,99 @@ class ShoreAnimation extends Observable {
       requestAnimationFrame(this.#tick);
     }
   };
+}
+
+export class AnimationType {
+  constructor(slider) {
+    this.slider = slider;
+  }
+
+  run(_currentIndex, _previousIndex) {}
+}
+
+export class AnimationTypeSlide extends AnimationType {
+  run(currentIndex, _previousIndex) {
+    let translateX = 0;
+
+    for (let i = 0; i < currentIndex; i++) {
+      translateX -= this.slider.slides[i].getBoundingClientRect().width;
+    }
+
+    const style = window.getComputedStyle(this.slider.wrapper);
+    const matrix = new DOMMatrix(style.transform);
+
+    const animation = new ShoreAnimation({
+      duration: this.slider.options.duration,
+      from: matrix.m41,
+      to: translateX,
+      timingFunction: this.slider.options.timingFunction,
+    });
+
+    animation.subscribe(current => {
+      this.slider.wrapper.style.transform = `translateX(${current}px)`;
+    });
+
+    animation.start();
+  }
+}
+
+export class AnimationTypeFade extends AnimationType {
+  run(currentIndex, previousIndex) {
+    if (previousIndex === undefined) {
+      this.slider.slides[currentIndex].style.opacity = 1;
+      return;
+    }
+
+    const animation = new ShoreAnimation({
+      duration: this.slider.options.duration,
+      from: 0,
+      to: 1,
+      timingFunction: this.slider.options.timingFunction,
+    });
+
+    this.slider.slides[previousIndex].style.zIndex = 0;
+    this.slider.slides[currentIndex].style.opacity = 0;
+    this.slider.slides[currentIndex].style.zIndex = 1;
+
+    animation.subscribe(current => {
+      this.slider.slides[currentIndex].style.opacity = current;
+
+      if (current >= 1) this.slider.slides[previousIndex].style.opacity = 0;
+    });
+
+    animation.start();
+  }
+}
+
+/** https://easings.net/ */
+export const TimingFunction = {
+  EaseOutCubic: x => 1 - Math.pow(1 - x, 3),
+  EaseInCubic: x => Math.pow(x, 3),
+  EaseOutBounce: easeOutBounce,
+  EaseInBounce: x => 1 - easeOutBounce(1 - x),
+  EaseOutElastic: easeOutElastic,
+  EaseInElastic: x => 1 - easeOutElastic(1 - x),
+  EaseOutCirc: x => Math.sqrt(1 - Math.pow(x - 1, 2)),
+  EaseInCirc: x => 1 - Math.sqrt(1 - Math.pow(x, 2)),
+};
+
+function easeOutBounce(x) {
+  const n1 = 7.5625;
+  const d1 = 2.75;
+
+  if (x < 1 / d1) {
+    return n1 * x * x;
+  } else if (x < 2 / d1) {
+    return n1 * (x -= 1.5 / d1) * x + 0.75;
+  } else if (x < 2.5 / d1) {
+    return n1 * (x -= 2.25 / d1) * x + 0.9375;
+  } else {
+    return n1 * (x -= 2.625 / d1) * x + 0.984375;
+  }
+}
+
+function easeOutElastic(x) {
+  const c4 = (2 * Math.PI) / 3;
+
+  return x === 0 ? 0 : x === 1 ? 1 : Math.pow(2, -10 * x) * Math.sin((x * 10 - 0.75) * c4) + 1;
 }
