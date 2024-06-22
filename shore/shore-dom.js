@@ -1,4 +1,6 @@
-import { Signal } from './shore-signal.js';
+import { ShoreComponent } from './shore-component.js';
+import { ShoreObservable } from './shore-observable.js';
+import { ShoreSignal } from './shore-signal.js';
 import { asArray } from './shore-utils.js';
 
 /**
@@ -16,7 +18,20 @@ export function e(tagName, attributes = {}, props = {}, children = []) {
   }
 
   for (const child of asArray(children).flat(Infinity)) {
-    element.append(child);
+    if (child instanceof ShoreObservable) {
+      let previousElements = [];
+
+      child.subscribe(
+        elements => {
+          previousElements.forEach(previous => previous.remove());
+          previousElements = elements.map(unwrapElement);
+          previousElements.forEach(innerElement => element.append(innerElement));
+        },
+        { immediate: true },
+      );
+    } else {
+      asArray(unwrapElement(child)).forEach(unwrapped => element.append(unwrapped));
+    }
   }
 
   return element;
@@ -46,19 +61,34 @@ export function $repeat(count, element) {
 }
 
 export function $each(array, element) {
-  const result = [];
+  const observable = new ShoreObservable();
 
-  for (let i = 0; i < array.length; i++) {
-    result.push(element instanceof Function ? element(array[i]) : element);
-  }
+  unwrapValue(array, elements => {
+    const result = [];
 
-  return result;
+    for (let i = 0; i < elements.length; i++) {
+      result.push(element instanceof Function ? element(elements[i]) : element);
+    }
+
+    observable.emit(result);
+  });
+
+  return observable;
 }
 
 function unwrapValue(valueOrSignal, handler) {
-  if (valueOrSignal instanceof Signal) {
+  if (valueOrSignal instanceof ShoreSignal) {
     valueOrSignal.effect(value => handler(value), { immediate: true });
   } else {
     handler(valueOrSignal);
   }
+}
+
+function unwrapElement(element) {
+  if (element instanceof ShoreComponent) {
+    const children = element.$render();
+    element.$afterViewInit();
+    return children;
+  }
+  return element;
 }

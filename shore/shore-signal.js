@@ -1,4 +1,4 @@
-export class Signal {
+export class ShoreSignal {
   #value = undefined;
   #effects = new Set();
 
@@ -24,9 +24,13 @@ export class Signal {
   }
 
   derive(handler) {
-    const derived = new Signal();
-    this.effect(value =>  derived.set(handler(value)), { immediate: true });
+    const derived = new ShoreSignal();
+    this.effect(value => derived.set(handler(value)), { immediate: true });
     return derived;
+  }
+
+  select(key) {
+    return this.derive(value => value[key]);
   }
 
   off(handler) {
@@ -46,16 +50,16 @@ export class Signal {
 }
 
 export function signal(initialValue = undefined) {
-  return new Signal(initialValue);
+  return new ShoreSignal(initialValue);
 }
 
 export function combine(handler, ...signals) {
-  const combined = new Signal();
+  const combined = new ShoreSignal();
 
   const valueChanged = () => {
-    combined.set(handler(...signals.map(signal => signal.get())))
+    combined.set(handler(...signals.map(signal => signal.get())));
   };
 
-  signals.forEach(signal => signal.effect(valueChanged));
+  signals.forEach(signal => signal.effect(valueChanged, { immediate: true }));
   return combined;
 }
