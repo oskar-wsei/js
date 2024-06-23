@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Balls</title>
+    <script src="./js/main.js" type="module"></script>
+    <link rel="stylesheet" href="./css/main.css">
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <div class="ui">
+      <div id="ui-fps"></div>
+      <div>
+        <div>Number of balls</div>
+        <input type="range" id="ui-num-balls" min="0" max="500" value="50">
+      </div>
+      <div>
+        <div>Line distance</div>
+        <input type="range" id="ui-distance" min="0" max="500" value="200">
+      </div>
+      <div>
+        <button id="ui-start-stop">Start/Stop</button>
+      </div>
+    </div>
+  </body>
+</html>
